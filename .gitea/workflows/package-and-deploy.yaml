@@ -26,6 +26,7 @@ jobs:
           gpg --export-secret-keys --output /tmp/keyring.gpg ${{ secrets.GPG_KEY_ID }}
       - name: Package Chart
         run: |
+          cp README.md ./charts/bookstack/.
           helm dependency build ./charts/bookstack
           helm package --version $CHART_VERSION --sign --keyring /tmp/keyring.gpg ./bookstack --dependency-update
           curl -u $REPO_CREDENTIALS -F "chart=@bookstack-$CHART_VERSION.tgz" -F "prov=@bookstack-$CHART_VERSION.tgz.prov" https://charts.morlana.net/api/charts
