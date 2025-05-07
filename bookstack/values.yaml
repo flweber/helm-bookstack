@@ -1,0 +1,139 @@
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  defaultStorageClass: ""
+  clusterDomain: cluster.local
+
+bookstack:
+  image:
+    registry: ""
+    repository: solidnerd
+    name: bookstack
+    tag: ""
+    pullPolicy: Always
+    imagePullSecrets: []
+  updateStrategy: {}
+  replicaCount: 1
+  config:
+    app:
+      key: ""
+      url: "https://example.com"
+      views.books: list
+      views.bookshelves: grid
+      views.bookshelf: grid
+      default.dark.mode: true
+    additional:
+      DISABLE_EXTERNAL_SERVICES: false
+  mail:
+    driver: "smtp"
+    host: ""
+    from: "bookstack@cluster.local"
+    from.name: "BookStack"
+    username: changeme
+    password: changeme
+    port: 1025
+    encryption: "null"
+  externalDatabase:
+    host: ""
+    database: ""
+    username: ""
+    password: ""
+  externalRedis:
+    servers: ""
+  auth:
+    method: standard
+    auto.initiate: false
+    oidc:
+      enabled: false
+      name: "Open ID Connect"
+      clientId: ""
+      clientSecret: ""
+      issuer: ""
+    azure:
+      enabled: false
+      appId: ""
+      appSecret: ""
+    discord:
+      enabled: false
+      appId: ""
+      appSecret: ""
+    facebook:
+      enabled: false
+      appId: ""
+      appSecret: ""
+    github:
+      enabled: false
+      appId: ""
+      appSecret: ""
+    gitlab:
+      enabled: false
+      appId: ""
+      appSecret: ""
+    google:
+      enabled: false
+      appId: ""
+      appSecret: ""
+    okta:
+      enabled: false
+      appId: ""
+      appSecret: ""
+    slack:
+      enabled: false
+      appId: ""
+      appSecret: ""
+    twitch:
+      enabled: false
+      appId: ""
+      appSecret: ""
+    twitter:
+      enabled: false
+      appId: ""
+      appSecret: ""
+    ldap:
+      enabled: false
+      server: ""
+      base.dn: ""
+      dn: ""
+      pass: ""
+  extraEnv: {}
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+    accessMode: "ReadWriteMany"
+
+service:
+  port: 8080
+  type: ClusterIP
+  loadBalancerIP: ""
+  nodePort: ""
+  clusterIP: ""
+
+ingress:
+  enabled: false
+  annotations: []
+  tls: []
+  class: ""
+  hostname: ""
+  path: "/"
+  pathType: "Prefix"
+
+db:
+  enabled: true
+  image:
+    pullPolicy: Always
+  architecture: standalone
+  auth:
+    database: "bookstack_app"
+    username: "bookstack"
+    rootPassword: ""
+    password: ""
+    replicationPassword: ""
+    existingSecret: "bookstack-database-credentials"
+
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
+    sentinel: false

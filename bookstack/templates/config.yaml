@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "bookstack.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+data:
+  {{- range $key, $value := .Values.bookstack.config.app }}
+  {{- if ne $key "key" }}
+  {{ printf "APP_%s" (upper ( replace "." "_" $key)) }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}
+  {{- /* -------------------------------------------------
+        Social‑Auth‑Sektionen
+        ------------------------------------------------- */}}
+  {{- $providers := list
+        "oidc" "azure" "discord" "facebook" "github" "gitlab"
+        "google" "okta" "slack" "twitch" "twitter" "ldap" }}
+  {{- range $_, $p := $providers }}
+  {{- /* .Values.bookstack.auth.<provider> als Map holen */}}
+  {{- $conf := index $.Values.bookstack.auth $p | default dict }}
+  {{- if $conf.enabled }}
+  {{- range $key, $value := $conf }}
+  {{- if and (ne $key "clientId") (ne $key "clientSecret") (ne $key "dn") (ne $key "pass") (ne $key "existingSecret") }}
+  {{ printf "%s_%s" (upper $p) (upper (replace "." "_" $key)) }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+
+  {{- range $key, $value := .Values.bookstack.mail }}
+  {{- if and (ne $key "username") (ne $key "password") $value }}
+  {{ printf "MAIL_%s" (upper (replace "." "_" $key)) }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}
+  {{- if not .Values.bookstack.mail.host }}
+  MAIL_HOST: {{ printf "%s.svc.%s.%s" (include "bookstack.mailpit.name" .) .Release.Namespace .Values.global.clusterDomain | quote }}
+  {{- end }}
+  AUTH_METHOD: {{ .Values.bookstack.auth.method | quote }}
+  AUTH_AUTO_INITIATE: {{ index .Values.bookstack.auth "auto.initiate" | quote }}
+  {{- range $key, $value := .Values.bookstack.config.additional }}
+  {{ $key | nospace | snakecase | upper }}: {{ $value | quote }}
+  {{- end }}
+  {{- if .Values.redis.enabled }}
+  REDIS_SERVERS: {{ printf "%s.svc.%s.%s:%.0f:0" (include "bookstack.redis.serviceName" .) .Release.Namespace .Values.global.clusterDomain .Values.redis.master.service.ports.redis | quote }}
+  {{- else if .Values.bookstack.externalRedis.servers }}
+  REDIS_SERVERS: {{ .Values.bookstack.externalRedis.servers | quote }}
+  {{- end }}

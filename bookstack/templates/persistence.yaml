@@ -1,0 +1,14 @@
+{{- if .Values.bookstack.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "bookstack.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - {{ required "You have to set the access mode for the volume" .Values.bookstack.persistence.accessMode }}
+  resources:
+    requests:
+      storage: {{ required "You have to set the storage size" .Values.bookstack.persistence.size }}
+  storageClassName: {{ include "bookstack.persistence.storageclass" . }}
+{{- end }}

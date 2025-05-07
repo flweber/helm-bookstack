@@ -1,0 +1,19 @@
+{{- /*
+Einmaliges Secret: wird nur angelegt, wenn es noch nicht existiert (lookup).
+*/}}
+{{- $secretName := include "bookstack.app-key" .}}
+{{- if not (lookup "v1" "Secret" .Release.Namespace $secretName) }}
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: {{ $secretName }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    helm.sh/resource-policy: keep
+  labels:
+    {{- include "bookstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: bookstack-app
+data:
+  app-key: {{ default (randAlphaNum 32) .Values.bookstack.config.app.key | b64enc | quote }}
+{{- end }}

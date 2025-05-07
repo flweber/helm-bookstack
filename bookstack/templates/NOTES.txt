@@ -1,0 +1,21 @@
+BookStack was installed to namespace {{ .Release.Namespace }}.
+
+{{- if .Values.ingress.enabled }}
+Your BookStack instance is available under
+
+  {{ if .Values.ingress.tls }}https{{ else }}http{{ end }}://{{ .Values.ingress.hostname }}
+
+{{- end }}
+
+{{- if .Values.db.enabled }}
+
+You decided to also install a MariaDB, you can get the root password by executing the following command:
+
+  kubectl get secret {{ include "bookstack.db.secretName" . }} \
+    --namespace {{ .Release.Namespace }} \
+    -o jsonpath="{.data.mariadb-root-password}" | base64 -d && echo
+
+{{- else }}
+Note: BookStack is using **an external database**:
+  {{ printf "%s" .Values.bookstack.externalDatabase.host }}.
+{{- end }}

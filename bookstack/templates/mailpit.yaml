@@ -1,0 +1,78 @@
+{{- $deploymentName := (include "bookstack.mailpit.name" .)}}
+{{- if and (eq .Values.bookstack.mail.driver "smtp") (not .Values.bookstack.mail.host) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "bookstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mailpit
+  name: {{ $deploymentName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "bookstack.labels" . | nindent 6 }}
+      app.kubernetes.io/component: mailpit
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        {{- include "bookstack.labels" . | nindent 8 }}
+        app.kubernetes.io/component: mailpit
+    spec:
+      containers:
+        - env:
+            - name: MP_ALLOW_UNTRUSTED_TLS
+              value: 'true'
+            - name: MP_API_CORS
+              value: 'true'
+            - name: MP_MAX_MESSAGES
+              value: '100'
+            - name: MP_QUIET
+              value: 'true'
+            - name: MP_SMTP_AUTH
+              value: {{ printf "%s:%s" .Values.bookstack.mail.username .Values.bookstack.mail.password | quote }}
+            - name: MP_SMTP_AUTH_ALLOW_INSECURE
+              value: 'true'
+            - name: MP_UI_AUTH
+              value: {{ printf "%s:%s" .Values.bookstack.mail.username .Values.bookstack.mail.password | quote }}
+          image: axllent/mailpit:latest
+          imagePullPolicy: Always
+          name: mailpit
+          ports:
+            - containerPort: 8025
+              name: http
+              protocol: TCP
+            - containerPort: 1025
+              name: smtp
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    {{- include "bookstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mailpit
+  name: {{ $deploymentName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - name: http
+      port: 8025
+      protocol: TCP
+      targetPort: 8025
+    - name: smtp
+      port: 1025
+      protocol: TCP
+      targetPort: 1025
+  selector:
+    {{- include "bookstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mailpit
+  type: ClusterIP
+  clusterIP: None
+{{- end }}

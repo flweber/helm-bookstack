@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+    checksum/secret: {{ include (print $.Template.BasePath "/secret-bookstack.yaml") . | sha256sum }}
+    checksum/app-key: {{ include (print $.Template.BasePath "/app-key.yaml") . | sha256sum }}
+  labels:
+    {{- include "bookstack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: bookstack-app
+  name: {{ include "bookstack.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.bookstack.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "bookstack.labels" . | nindent 6 }}
+      app.kubernetes.io/component: bookstack-app
+  {{- if .Values.bookstack.updateStrategy }}
+  strategy:
+    {{- toYaml .Values.bookstack.updateStrategy | nindent 4 }}
+  {{- else }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        {{- include "bookstack.labels" . | nindent 8 }}
+        app.kubernetes.io/component: bookstack-app
+    spec:
+      containers:
+        - name: bookstack
+          image: {{ include "bookstack.image" . }}
+          imagePullPolicy: {{ .Values.bookstack.image.pullPolicy }}
+          env:
+            {{- if .Values.db.enabled }}
+            - name: DB_HOST
+              value: {{ include "bookstack.db.serviceName" . | quote }}
+            - name: DB_DATABASE
+              value: {{ .Values.db.auth.database | quote }}
+            - name: DB_USERNAME
+              value: {{ .Values.db.auth.username | quote }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "bookstack.db.secretName" . }}
+                  key: mariadb-password
+            {{- else }}
+            - name: DB_HOST
+              value: {{ required "When you disable the onboard database you have to define bookstack.externalDatabase.host" .Values.bookstack.externalDatabase.host | quote }}
+            - name: DB_USERNAME
+              value: {{ required "When you disable the onboard database you have to define bookstack.externalDatabase.username" .Values.bookstack.externalDatabase.username | quote }}
+            - name: DB_DATABASE
+              value: {{ required "When you disable the onboard database you have to define bookstack.externalDatabase.database" .Values.bookstack.externalDatabase.database | quote }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "bookstack.secret" . }}
+                  key: mariadb-password
+            {{- end }}
+            - name: APP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "bookstack.app-key" . }}
+                  key: app-key
+            {{- with .Values.bookstack.extraEnv }}
+            {{- range $key, $val := . }}
+            - name: {{ $key | upper | quote }}
+              {{- if kindIs "map" $val }}
+              {{ toYaml $val | nindent 14 }}
+              {{- else }}
+              value: {{ $val | quote }}
+              {{- end }}
+            {{- end }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "bookstack.fullname" . }}
+            {{- if or (not .Values.db.enabled) (not (.Values.bookstack.auth | default dict | len | eq 0)) }}
+            - secretRef:
+                name: {{ include "bookstack.secret" . }}
+            {{- end }}
+          ports:
+            - containerPort: 8080
+              name: bookstack-http
+              protocol: TCP
+          {{- if .Values.bookstack.persistence.enabled }}
+          volumeMounts:
+            - mountPath: /var/www/bookstack/public/uploads
+              subPath: public-uploads
+              name: {{ include "bookstack.name" . }}
+            - mountPath: /var/www/bookstack/storage/uploads
+              subPath: storage-uploads
+              name: {{ include "bookstack.name" . }}
+          {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+      securityContext: {}
+      serviceAccount: ""
+      serviceAccountName: ""
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      {{- with .Values.bookstack.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.bookstack.persistence.enabled }}
+      volumes:
+        - name: {{ include "bookstack.name" . }}
+          persistentVolumeClaim:
+            claimName: {{ include "bookstack.fullname" . }}
+      {{- end }}
