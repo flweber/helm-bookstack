@@ -1,4 +1,4 @@
-name: Packaging Chart
+name: Package & Sign Helm Chart
 
 on:
   release:
@@ -7,29 +7,74 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    env:
+      CHART_DIR:      bookstack/
+      CHART_VERSION:  ${{ github.event.release.tag_name }}
+      GPG_KEY_ID:     ${{ secrets.GPG_KEY_ID }}
+      PASSPHRASE:     ${{ secrets.GPG_PASSPHRASE }}
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup latest Helm
-        uses: azure/setup-helm@v4.3.0
+
+      # 1) Code auschecken
+      - uses: actions/checkout@v4
+
+      # 2) Helm installieren
+      - uses: azure/setup-helm@v4.3.0
         with:
           version: latest
         id: install
+
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v6
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
           trust_level: 5
-      - name: Export GPG key in legacy format
+
+      # 4) “Generation‑1”‑Secret‑Ring für Helm erzeugen (TMP, 600 Rechte)
+      - name: Build legacy secret-keyring
         run: |
-          gpg --export-secret-keys --output /tmp/keyring.gpg ${{ secrets.GPG_KEY_ID }}
-      - name: Package Chart
+          install -m 700 -d /tmp/gpgring
+          gpg --batch --pinentry-mode loopback \
+              --export-secret-keys "$GPG_KEY_ID" \
+              --output /tmp/gpgring/secring.gpg
+          chmod 600 /tmp/gpgring/secring.gpg
+          echo "$PASSPHRASE" > /tmp/gpgring/passphrase.txt
+          chmod 600 /tmp/gpgring/passphrase.txt
+
+      # 5) Chart bauen & signieren
+      - name: Package & sign chart
         run: |
-          cp README.md ./charts/bookstack/.
-          helm dependency build ./charts/bookstack
-          helm package --version $CHART_VERSION --sign --keyring /tmp/keyring.gpg ./bookstack --dependency-update
-          curl -H "Authorization: Basic $REPO_CREDENTIALS" -F "chart=@bookstack-$CHART_VERSION.tgz" -F "prov=@bookstack-$CHART_VERSION.tgz.prov" https://charts.morlana.net/api/charts
+          cp README.md "$CHART_DIR"/
+          helm dependency build "$CHART_DIR"
+          helm package "$CHART_DIR" \
+               --version "$CHART_VERSION" \
+               --sign \
+               --key "$GPG_KEY_ID" \
+               --keyring /tmp/gpgring/secring.gpg \
+               --passphrase-file /tmp/gpgring/passphrase.txt
+
+      # 6) In dein internes Chart‑Repo hochladen
+      - name: Upload to ChartMuseum
         env:
           REPO_CREDENTIALS: ${{ secrets.REPO_CREDENTIALS }}
-          CHART_VERSION: ${{ github.event.release.tag_name }}
+        run: |
+          curl -H "Authorization: Basic $REPO_CREDENTIALS" \
+               -F "chart=@bookstack-$CHART_VERSION.tgz" \
+               -F "prov=@bookstack-$CHART_VERSION.tgz.prov" \
+               https://charts.morlana.net/api/charts
+
+      # 7) Public‑Key aus Repo beilegen und als Release‑Asset anhängen
+      - name: Attach release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: |
+            bookstack-${{ env.CHART_VERSION }}.tgz
+            bookstack-${{ env.CHART_VERSION }}.tgz.prov
+            pubkeys/morlana.asc
+
+      # 8) Aufräumen (optional, Runner ist ohnehin kurzlebig)
+      - name: Cleanup sensitive files
+        if: ${{ always() }}
+        run: rm -rf /tmp/gpgring
