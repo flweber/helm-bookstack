@@ -84,6 +84,12 @@ spec:
             - secretRef:
                 name: {{ include "bookstack.secret" . }}
             {{- end }}
+            {{- range $key, $conf := .Values.bookstack.auth }}
+            {{- if and (ne $key "method") (ne $key "auto.initiate") ($conf.enabled) $conf.existingSecret }}
+            - secretRef:
+                name: {{ $conf.existingSecret }}
+            {{- end }}
+            {{- end }}
           ports:
             - containerPort: 8080
               name: bookstack-http
