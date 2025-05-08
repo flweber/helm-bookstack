@@ -18,3 +18,34 @@ dependencies:
     version: ">=21.0.0 <22.0.0"
     repository: "oci://registry-1.docker.io/bitnamicharts"
     condition: redis.enabled
+
+annotations:
+  artifacthub.io/license: MIT
+  artifacthub.io/links: |
+    - name: Git Repository
+      url: https://git.morlana.online/f.weber/bookstack-chart
+    - name: Issues
+      url: https://github.com/flweber/helm-bookstack/issues
+    - name: GitHub Mirror
+      url: https://github.com/flweber/helm-bookstack
+  artifacthub.io/maintainers: |
+    - name: Florian Weber
+      email: kosmos@morlana.net
+  artifacthub.io/signKey: |
+    fingerprint: BCE21EEA25DE14B418196DA1FF6F7246FAA99C30
+    url: https://raw.githubusercontent.com/flweber/helm-bookstack/refs/heads/main/pubkeys/morlana.asc
+  artifacthub.io/changes: |
+    - kind: added
+      description: Initial Helm chart for BookStack. ✦ Packages upstream BookStack v25.2.3
+      links:
+        - name: Project homepage
+          url: https://www.bookstackapp.com/
+    - kind: added
+      description: ✦ Ingress, persistence, TLS and SMTP settings ready‑made
+    - kind: added
+      description: ✦ Includes optional MariaDB and Redis sub‑charts
+      links:
+        - name: MariaDB sub‑chart
+          url: https://artifacthub.io/packages/helm/bitnami/mariadb
+        - name: Redis sub‑chart
+          url: https://artifacthub.io/packages/helm/bitnami/redis
