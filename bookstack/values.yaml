@@ -18,12 +18,8 @@ bookstack:
     app:
       key: ""
       url: "https://example.com"
-      views.books: list
-      views.bookshelves: grid
-      views.bookshelf: grid
-      default.dark.mode: true
-    additional:
-      DISABLE_EXTERNAL_SERVICES: false
+    additional: {}
+    additionalSecrets: {}
   mail:
     driver: "smtp"
     host: ""
