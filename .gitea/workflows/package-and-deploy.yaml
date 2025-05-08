@@ -19,7 +19,7 @@ jobs:
         uses: crazy-max/ghaction-import-gpg@v6
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.PASSPHRASE }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
           trust_level: 5
       - name: Export GPG key in legacy format
         run: |
@@ -29,7 +29,7 @@ jobs:
           cp README.md ./charts/bookstack/.
           helm dependency build ./charts/bookstack
           helm package --version $CHART_VERSION --sign --keyring /tmp/keyring.gpg ./bookstack --dependency-update
-          curl -u $REPO_CREDENTIALS -F "chart=@bookstack-$CHART_VERSION.tgz" -F "prov=@bookstack-$CHART_VERSION.tgz.prov" https://charts.morlana.net/api/charts
+          curl -H "Authorization: Basic $REPO_CREDENTIALS" -F "chart=@bookstack-$CHART_VERSION.tgz" -F "prov=@bookstack-$CHART_VERSION.tgz.prov" https://charts.morlana.net/api/charts
         env:
           REPO_CREDENTIALS: ${{ secrets.REPO_CREDENTIALS }}
           CHART_VERSION: ${{ github.event.release.tag_name }}
