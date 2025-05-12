@@ -37,7 +37,7 @@ jobs:
           install -m 700 -d /tmp/gpgring
           gpg --batch --pinentry-mode loopback \
               --export-secret-keys "$GPG_KEY_ID" \
-              --output /tmp/gpgring/secring.gpg
+              >/tmp/gpgring/secring.gpg
           chmod 600 /tmp/gpgring/secring.gpg
           echo "$PASSPHRASE" > /tmp/gpgring/passphrase.txt
           chmod 600 /tmp/gpgring/passphrase.txt
