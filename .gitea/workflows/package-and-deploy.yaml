@@ -34,6 +34,7 @@ jobs:
       # 4) “Generation‑1”‑Secret‑Ring für Helm erzeugen (TMP, 600 Rechte)
       - name: Build legacy secret-keyring
         run: |
+          set -euo pipefail
           install -m 700 -d /tmp/gpgring
           gpg --batch --yes --pinentry-mode loopback \
               --passphrase "$PASSPHRASE" \
