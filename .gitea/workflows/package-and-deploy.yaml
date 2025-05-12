@@ -35,7 +35,7 @@ jobs:
       - name: Build legacy secret-keyring
         run: |
           install -m 700 -d /tmp/gpgring
-          gpg --batch \
+          gpg --batch --yes --pinentry-mode loopback \
               --export-secret-keys "$GPG_KEY_ID" \
               >/tmp/gpgring/secring.gpg
           chmod 600 /tmp/gpgring/secring.gpg
