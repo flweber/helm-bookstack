@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-generate_changelog.py  –  Wandelt den Artifact Hub‑Changelog in Chart.yaml
-                           in eine Markdown‑Datei (CHANGELOG.md) um.
+generate_changelog.py  -  Wandelt den Artifact Hub-Changelog in Chart.yaml
+                           in eine Markdown-Datei (CHANGELOG.md) um.
 
 Aufruf:
     python generate_changelog.py            # takes ./Chart.yaml
@@ -42,7 +42,7 @@ def render_markdown(chart: dict, changes: list[dict]) -> str:
     version = chart.get("version", "Unversioniert")
     today = dt.date.today().isoformat()
 
-    heading = f"## {version} – {today}\n"
+    heading = f"## {version} - {today}\n"
     bullets = []
 
     for item in changes:

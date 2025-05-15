@@ -1,6 +1,6 @@
 # BookStack Helm Chart
 
-Deploys the BookStack wiki platform on Kubernetes with optional MariaDB and Redis sub‑charts.
+Deploys the BookStack wiki platform on Kubernetes with optional MariaDB and Redis sub-charts.
 
 ---
 
