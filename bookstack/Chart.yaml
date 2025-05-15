@@ -1,6 +1,7 @@
 apiVersion: v2
 name: bookstack
-description: A Helm chart for Kubernetes
+description: |
+  Deploys the BookStack wiki platform on Kubernetes with optional MariaDB and Redis sub-charts.
 
 type: application
 
