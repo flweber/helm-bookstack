@@ -31,12 +31,7 @@ jobs:
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
           trust_level: 5
 
-      - name: Show keys in runner
-        run: |
-          echo "🔑  Keys inside CI:"
-          gpg --list-secret-keys --keyid-format LONG
-
-      # 4) “Generation‑1”‑Secret‑Ring für Helm erzeugen (TMP, 600 Rechte)
+      # 3) "Generation-1"-Secret-Ring für Helm erzeugen (TMP, 600 Rechte)
       - name: Build legacy secret-keyring
         run: |
           set -euo pipefail
@@ -49,7 +44,7 @@ jobs:
           echo "$PASSPHRASE" > /tmp/gpgring/passphrase.txt
           chmod 600 /tmp/gpgring/passphrase.txt
 
-      # 5) Chart bauen & signieren
+      # 4) Chart bauen & signieren
       - name: Package & sign chart
         run: |
           cp README.md "$CHART_DIR"/
@@ -61,7 +56,7 @@ jobs:
                --keyring /tmp/gpgring/secring.gpg \
                --passphrase-file /tmp/gpgring/passphrase.txt
 
-      # 6) In dein internes Chart‑Repo hochladen
+      # 5) In dein internes Chart-Repo hochladen
       - name: Upload to ChartMuseum
         env:
           REPO_CREDENTIALS: ${{ secrets.REPO_CREDENTIALS }}
@@ -71,7 +66,7 @@ jobs:
                -F "prov=@bookstack-$CHART_VERSION.tgz.prov" \
                https://charts.morlana.net/api/charts
 
-      # 7) Public‑Key aus Repo beilegen und als Release‑Asset anhängen
+      # 6) Public-Key aus Repo beilegen und als Release-Asset anhängen
       - name: Attach release assets
         uses: softprops/action-gh-release@v2
         with:
@@ -81,7 +76,7 @@ jobs:
             bookstack-${{ env.CHART_VERSION }}.tgz.prov
             pubkeys/morlana.asc
 
-      # 8) Aufräumen (optional, Runner ist ohnehin kurzlebig)
+      # 7) Aufräumen (optional, Runner ist ohnehin kurzlebig)
       - name: Cleanup sensitive files
         if: ${{ always() }}
         run: rm -rf /tmp/gpgring
