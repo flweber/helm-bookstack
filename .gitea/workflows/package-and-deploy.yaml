@@ -16,7 +16,7 @@ jobs:
     steps:
 
       # 1) Code auschecken
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # 2) Helm installieren
       - uses: azure/setup-helm@v4.3.0
